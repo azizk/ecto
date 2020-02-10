@@ -197,8 +197,8 @@ defmodule Ecto.Query.Builder do
 
   # json
   def escape({:json_extract_path, _, [expr, path]}, type, params_acc, vars, env) do
-    path = escape_json_path(path)
     {expr, params_acc} = escape(expr, type, params_acc, vars, env)
+    {path, params_acc} = escape_json_path(path, params_acc, vars, env)
     {{:{}, [], [:json_extract_path, [], [expr, path]]}, params_acc}
   end
 
@@ -831,11 +831,20 @@ defmodule Ecto.Query.Builder do
   def field!(other),
     do: error!("expected atom in field/2, got: `#{inspect other}`")
 
-  defp escape_json_path(path) when is_list(path) do
-    Enum.map(path, &quoted_json_path_element!/1)
+  defp escape_json_path(path, params_acc, vars, env) when is_list(path) do
+    Enum.reduce(path, {[], params_acc}, fn element, {path, params_acc} ->
+      case element do
+        {:^, meta, [value]} ->
+          element = {:^, meta, [quoted_json_path_element!(value)]}
+          {[element | path], params_acc}
+
+        other ->
+          {[other | path], params_acc}
+      end
+    end)
   end
 
-  defp escape_json_path(other) do
+  defp escape_json_path(other, _, _, _) do
     error!("expected JSON path to be compile-time list, got: `#{Macro.to_string(other)}`")
   end
 
