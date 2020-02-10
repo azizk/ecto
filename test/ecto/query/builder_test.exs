@@ -40,6 +40,9 @@ defmodule Ecto.Query.BuilderTest do
            |> elem(0)
 
     expected = {Macro.escape(quote do: json_extract_path(&0.y(), ["a", "b"])), []}
+    actual = escape(quote do json_extract_path(x.y, ["a", "b"]) end, [x: 0], __ENV__)
+    assert actual == expected
+
     actual = escape(quote do x.y["a"]["b"] end, [x: 0], __ENV__)
     assert actual == expected
 

@@ -271,6 +271,9 @@ defmodule Ecto.Query.InspectTest do
   end
 
   test "json_extract_path" do
+    assert i(from(x in Post, select: json_extract_path(x.meta, ["author"]))) ==
+             ~s{from p0 in Inspect.Post, select: p0.meta[\"author\"]}
+
     assert i(from(x in Post, select: x.meta["author"])) ==
              ~s{from p0 in Inspect.Post, select: p0.meta[\"author\"]}
 
