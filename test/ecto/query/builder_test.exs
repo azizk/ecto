@@ -49,6 +49,10 @@ defmodule Ecto.Query.BuilderTest do
     assert_raise Ecto.Query.CompileError, ~r/expected JSON path to contain literal strings.*got: `a`/, fn ->
       escape(quote do x.y[a] end, [x: 0], __ENV__)
     end
+
+    assert_raise Ecto.Query.CompileError, "expected JSON path to be compile-time list, got: `bad`", fn ->
+      escape(quote do json_extract_path(x.y, bad) end, [x: 0], __ENV__)
+    end
   end
 
   test "escape fragments" do
