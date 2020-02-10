@@ -872,7 +872,7 @@ defmodule Ecto.Query.Builder do
   def json_path_element!(integer) when is_integer(integer),
     do: integer
   def json_path_element!(other),
-    do: error!("expected string in json_extract_path/2, got: `#{inspect other}`")
+    do: error!("expected string or integer in json_extract_path/2, got: `#{inspect other}`")
 
   @doc """
   Called by escaper at runtime to verify that a value is not nil.
