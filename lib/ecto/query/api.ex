@@ -468,9 +468,6 @@ defmodule Ecto.Query.API do
 
       field = "name"
       from(post in Post, select: post.meta["author"][^field])
-
-  However, the dynamic values are not escaped so make sure to properly sanitize
-  them before using user-generated input.
   """
   def json_extract_path(json_field, path), do: doc! [json_field, path]
 
