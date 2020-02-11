@@ -267,6 +267,7 @@ defmodule Ecto.Integration.TypeTest do
     assert TestRepo.get!(Order, order.id).item.price == 456
   end
 
+  @tag :map_type
   @tag :json_extract_path
   test "json_extract_path" do
     post = %Post{meta: %{:visits => 123, "'single quoted'" => 456, "\"double quoted\"" => 789}}
@@ -287,6 +288,7 @@ defmodule Ecto.Integration.TypeTest do
     assert TestRepo.one(from p in Post, select: p.meta["\"double quoted\""]) == 789
   end
 
+  @tag :map_type
   @tag :json_extract_path
   test "json_extract_path with arrays" do
     post = %Post{meta: %{tags: [%{name: "red"}, %{name: "green"}]}}
