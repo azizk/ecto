@@ -269,41 +269,34 @@ defmodule Ecto.Integration.TypeTest do
 
   @tag :json_extract_path
   test "json_extract_path" do
-    item = %Item{price: 123, valid_at: ~D[2014-01-16]}
+    post = %Post{meta: %{:visits => 123, "'quoted'" => 456}}
+    TestRepo.insert!(post)
 
-    %Order{}
-    |> Ecto.Changeset.change()
-    |> Ecto.Changeset.put_embed(:item, item)
-    |> TestRepo.insert!()
+    assert TestRepo.one(from p in Post, select: p.meta["visits"]) == 123
 
-    assert TestRepo.one(from o in Order, select: o.item["price"]) == item.price
+    assert TestRepo.one(from p in Post, select: p.meta["bad"]) == nil
+    assert TestRepo.one(from p in Post, select: p.meta["bad"]["bad"]) == nil
 
-    assert TestRepo.one(from o in Order, select: o.item["bad"]) == nil
-    assert TestRepo.one(from o in Order, select: o.item["bad"]["bad"]) == nil
+    assert TestRepo.one(from p in Post, select: type(p.meta["visits"], :string)) == "123"
 
-    field = "price"
-    assert TestRepo.one(from o in Order, select: o.item[^field]) == item.price
+    field = "visits"
+    assert TestRepo.one(from p in Post, select: p.meta[^field]) == 123
 
-    assert TestRepo.one(from o in Order, select: type(o.item["price"], :string)) == "123"
-
-    assert TestRepo.one(from o in Order, select: type(o.item[^field], :string)) == "123"
+    assert TestRepo.one(from p in Post, select: p.meta["'quoted'"]) == 456
+    assert TestRepo.one(from p in Post, select: p.meta["';"]) == nil
   end
 
   @tag :json_extract_path
   test "json_extract_path with arrays" do
-    item = %Item{secondary_colors: [%ItemColor{name: "red"}, %ItemColor{name: "green"}]}
+    post = %Post{meta: %{tags: [%{name: "red"}, %{name: "green"}]}}
+    TestRepo.insert!(post)
 
-    %Order{}
-    |> Ecto.Changeset.change()
-    |> Ecto.Changeset.put_embed(:item, item)
-    |> TestRepo.insert!()
-
-    assert TestRepo.one(from o in Order, select: o.item["secondary_colors"][0]["name"]) == "red"
+    assert TestRepo.one(from p in Post, select: p.meta["tags"][0]["name"]) == "red"
 
     index = 1
-    assert TestRepo.one(from o in Order, select: o.item["secondary_colors"][^index]["name"]) == "green"
+    assert TestRepo.one(from p in Post, select: p.meta["tags"][^index]["name"]) == "green"
 
-    assert TestRepo.one(from o in Order, select: o.item["secondary_colors"][99]["name"]) == nil
+    assert TestRepo.one(from p in Post, select: p.meta["tags"][99]["name"]) == nil
   end
 
   @tag :map_type
