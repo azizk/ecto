@@ -269,7 +269,7 @@ defmodule Ecto.Integration.TypeTest do
 
   @tag :json_extract_path
   test "json_extract_path" do
-    post = %Post{meta: %{:visits => 123, "'quoted'" => 456}}
+    post = %Post{meta: %{:visits => 123, "'single quoted'" => 456, "\"double quoted\"" => 789}}
     TestRepo.insert!(post)
 
     assert TestRepo.one(from p in Post, select: p.meta["visits"]) == 123
@@ -282,8 +282,9 @@ defmodule Ecto.Integration.TypeTest do
     field = "visits"
     assert TestRepo.one(from p in Post, select: p.meta[^field]) == 123
 
-    assert TestRepo.one(from p in Post, select: p.meta["'quoted'"]) == 456
+    assert TestRepo.one(from p in Post, select: p.meta["'single quoted'"]) == 456
     assert TestRepo.one(from p in Post, select: p.meta["';"]) == nil
+    assert TestRepo.one(from p in Post, select: p.meta["\"double quoted\""]) == 789
   end
 
   @tag :json_extract_path
