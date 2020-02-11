@@ -468,6 +468,7 @@ defmodule Ecto.Query.API do
 
       field = "name"
       from(post in Post, select: post.meta["author"][^field])
+
   """
   def json_extract_path(json_field, path), do: doc! [json_field, path]
 
