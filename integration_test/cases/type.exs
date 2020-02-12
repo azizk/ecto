@@ -270,7 +270,7 @@ defmodule Ecto.Integration.TypeTest do
   @tag :map_type
   @tag :json_extract_path
   test "json_extract_path" do
-    post = %Post{meta: %{:visits => 123, "'single quoted'" => 456, "\"double quoted\"" => 789}}
+    post = %Post{meta: %{:visits => 123, :price => Decimal.new(42), "'single'" => 456, "\"double\"" => 789}}
     TestRepo.insert!(post)
 
     assert TestRepo.one(from p in Post, select: p.meta["visits"]) == 123
@@ -278,14 +278,15 @@ defmodule Ecto.Integration.TypeTest do
     assert TestRepo.one(from p in Post, select: p.meta["bad"]) == nil
     assert TestRepo.one(from p in Post, select: p.meta["bad"]["bad"]) == nil
 
-    assert TestRepo.one(from p in Post, select: type(p.meta["visits"], :string)) == "123"
+    assert TestRepo.one(from p in Post, select: p.meta["price"]) == "42"
+    assert TestRepo.one(from p in Post, select: type(p.meta["price"], :decimal)) == Decimal.new(42)
 
     field = "visits"
     assert TestRepo.one(from p in Post, select: p.meta[^field]) == 123
 
-    assert TestRepo.one(from p in Post, select: p.meta["'single quoted'"]) == 456
+    assert TestRepo.one(from p in Post, select: p.meta["'single'"]) == 456
     assert TestRepo.one(from p in Post, select: p.meta["';"]) == nil
-    assert TestRepo.one(from p in Post, select: p.meta["\"double quoted\""]) == 789
+    assert TestRepo.one(from p in Post, select: p.meta["\"double\""]) == 789
   end
 
   @tag :map_type
