@@ -472,6 +472,9 @@ defmodule Ecto.Query.API do
   """
   def json_extract_path(json_field, path), do: doc! [json_field, path]
 
+  # TODO: add docs
+  def embed_extract_path(embed_field, path), do: doc! [embed_field, path]
+
   @doc """
   Casts the given value to the given type at the database level.
 

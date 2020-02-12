@@ -268,6 +268,10 @@ defimpl Inspect, for: Ecto.Query do
     json_expr_path_to_expr(expr, path) |> expr(names, part)
   end
 
+  defp expr_to_string({:embed_extract_path, _, [expr, path]}, _, names, part) do
+    embed_expr_path_to_expr(expr, path) |> expr(names, part)
+  end
+
   defp expr_to_string(_expr, string, _, _) do
     string
   end
@@ -287,6 +291,12 @@ defimpl Inspect, for: Ecto.Query do
   defp json_expr_path_to_expr(expr, path) do
     Enum.reduce(path, expr, fn element, acc ->
       {{:., [], [Access, :get]}, [], [acc, element]}
+    end)
+  end
+
+  defp embed_expr_path_to_expr(expr, path) do
+    Enum.reduce(path, expr, fn element, acc ->
+      {{:., [], [acc, element]}, [], []}
     end)
   end
 

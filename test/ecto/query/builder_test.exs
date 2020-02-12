@@ -38,7 +38,9 @@ defmodule Ecto.Query.BuilderTest do
            |> elem(0)
            |> Code.eval_quoted([], __ENV__)
            |> elem(0)
+  end
 
+  test "escape json_extract_path" do
     expected = {Macro.escape(quote do: json_extract_path(&0.y(), ["a", "b"])), []}
     actual = escape(quote do json_extract_path(x.y, ["a", "b"]) end, [x: 0], __ENV__)
     assert actual == expected
@@ -50,8 +52,25 @@ defmodule Ecto.Query.BuilderTest do
       escape(quote do x.y[a] end, [x: 0], __ENV__)
     end
 
-    assert_raise Ecto.Query.CompileError, "expected JSON path to be compile-time list, got: `bad`", fn ->
+    assert_raise Ecto.Query.CompileError, "expected JSON path to be a compile-time list, got: `bad`", fn ->
       escape(quote do json_extract_path(x.y, bad) end, [x: 0], __ENV__)
+    end
+  end
+
+  test "escape embed_extract_path" do
+    expected = {Macro.escape(quote do: embed_extract_path(&0.y(), [:a, :b])), []}
+    actual = escape(quote do embed_extract_path(x.y, [:a, :b]) end, [x: 0], __ENV__)
+    assert actual == expected
+
+    actual = escape(quote do x.y.a.b end, [x: 0], __ENV__)
+    assert actual == expected
+
+    assert_raise Ecto.Query.CompileError, ~r"compile-time list of atoms, got: `bad`", fn ->
+      escape(quote do embed_extract_path(x.y, bad) end, [x: 0], __ENV__)
+    end
+
+    assert_raise Ecto.Query.CompileError, ~r"compile-time list of atoms, got: `\[:a, a\]`", fn ->
+      escape(quote do embed_extract_path(x.y, [:a, a]) end, [x: 0], __ENV__)
     end
   end
 

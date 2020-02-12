@@ -203,8 +203,20 @@ defmodule Ecto.Query.Builder do
   end
 
   def escape({{:., meta, [Access, :get]}, _, _} = expr, type, params_acc, vars, env) do
-    {expr, path} = parse_access_get(expr, [])
+    {expr, path} = parse_json_extract_path(expr, [])
     escape({:json_extract_path, meta, [expr, path]}, type, params_acc, vars, env)
+  end
+
+  # embed
+  def escape({:embed_extract_path, _, [expr, path]}, type, params_acc, vars, env) do
+    path = escape_embed_path(path)
+    {expr, params_acc} = escape(expr, type, params_acc, vars, env)
+    {{:{}, [], [:embed_extract_path, [], [expr, path]]}, params_acc}
+  end
+
+  def escape({{:., meta, [_, _]}, _, []} = expr, type, params_acc, vars, env) do
+    {expr, path} = parse_embed_extract_path(expr, [])
+    escape({:embed_extract_path, meta, [expr, path]}, type, params_acc, vars, env)
   end
 
   # sigils
@@ -836,7 +848,10 @@ defmodule Ecto.Query.Builder do
   end
 
   defp escape_json_path(other) do
-    error!("expected JSON path to be compile-time list, got: `#{Macro.to_string(other)}`")
+    error!(
+      "expected JSON path to be a compile-time list, got: " <>
+        "`#{Macro.to_string(other)}`"
+    )
   end
 
   defp quoted_json_path_element!({:^, _, [expr]}),
@@ -864,6 +879,19 @@ defmodule Ecto.Query.Builder do
     do: integer
   def json_path_element!(other),
     do: error!("expected string or integer in json_extract_path/2, got: `#{inspect other}`")
+
+  defp escape_embed_path(path) do
+    # TODO: handle integers for embeds_many
+    # TODO: handle ^var?
+    if is_list(path) and Enum.all?(path, &is_atom/1) do
+      path
+    else
+      error!(
+        "expected embed_extract_path/2 to receive a compile-time list of atoms, got: " <>
+          "`#{Macro.to_string(path)}`"
+      )
+    end
+  end
 
   @doc """
   Called by escaper at runtime to verify that a value is not nil.
@@ -1116,12 +1144,21 @@ defmodule Ecto.Query.Builder do
   defp escape_query(other),
     do: other
 
-  defp parse_access_get({{:., _, [Access, :get]}, _, [left, right]}, acc) do
-    parse_access_get(left, [right | acc])
-  end
-
-  defp parse_access_get({{:., _, [{var, _, context}, field]}, _, []} = expr, acc)
+  defp parse_json_extract_path({{:., _, [{var, _, context}, field]}, _, []} = expr, acc)
        when is_atom(var) and is_atom(context) and is_atom(field) do
     {expr, acc}
+  end
+
+  defp parse_json_extract_path({{:., _, [Access, :get]}, _, [left, right]}, acc) do
+    parse_json_extract_path(left, [right | acc])
+  end
+
+  defp parse_embed_extract_path({{:., _, [{var, _, context}, field]}, _, []} = expr, acc)
+       when is_atom(var) and is_atom(context) and is_atom(field) do
+    {expr, acc}
+  end
+
+  defp parse_embed_extract_path({{:., _, [left, right]}, _, []}, acc) do
+    parse_embed_extract_path(left, [right | acc])
   end
 end
