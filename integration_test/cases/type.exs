@@ -303,6 +303,24 @@ defmodule Ecto.Integration.TypeTest do
   end
 
   @tag :map_type
+  @tag :json_extract_path
+  test "embed_extract_path" do
+    item = %Item{price: 123, valid_at: ~D[2014-01-16]}
+
+    %Order{}
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.put_embed(:item, item)
+    |> TestRepo.insert!()
+
+    assert TestRepo.one(from(o in Order, select: embed_extract_path(o.item, [:price]))) == item.price
+    # assert TestRepo.one(from(o in Order, select: embed_extract_path(o.item, [:valid_at]))) == item.valid_at
+
+    assert_raise RuntimeError, "field :bad does not exist in embed Ecto.Integration.Item", fn ->
+      TestRepo.one(from(o in Order, select: embed_extract_path(o.item, [:bad])))
+    end
+  end
+
+  @tag :map_type
   test "embeds one with custom type" do
     item = %Item{price: 123, reference: "PREFIX-EXAMPLE"}
 

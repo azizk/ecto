@@ -1004,6 +1004,40 @@ defmodule Ecto.Query.Planner do
     {%Ecto.Query.Tagged{value: arg, tag: type, type: Ecto.Type.type(type)}, acc}
   end
 
+  defp prewalk({:embed_extract_path, _meta, [embed_field, path]} = expr, kind, query, _expr, acc, _adapter) do
+    {{:., _, [{:&, _, [ix]}, field]}, _, []} = embed_field
+    {_, schema, _} = get_source!(kind, query, ix)
+
+    embed =
+      case schema.__schema__(:type, field) do
+        {:embed, %{related: embed}} ->
+          embed
+
+        nil ->
+          # TODO improve error
+          raise "unknown field `#{field}`"
+
+        other ->
+          # TODO improve error
+          raise "expected field `#{field}` to be of type embed, got: `#{inspect(other)}`"
+      end
+
+    case path do
+      [element] ->
+        type = embed.__schema__(:type, element)
+
+        unless type do
+          # TODO: improve error
+          raise "field `#{element}` does not exist in embed #{inspect(embed)}"
+        end
+
+      _ ->
+        raise "accessing nested embeds is not yet supported"
+    end
+
+    {expr, acc}
+  end
+
   defp prewalk(%Ecto.Query.Tagged{value: v, type: type} = tagged, kind, query, expr, acc, adapter) do
     if Ecto.Type.base?(type) do
       {tagged, acc}
@@ -1455,6 +1489,7 @@ defmodule Ecto.Query.Planner do
   end
 
   defp type!(_kind, _query, _expr, nil, _field), do: :any
+
   defp type!(kind, query, expr, ix, field) when is_integer(ix) do
     case get_source!(kind, query, ix) do
       {:fragment, _, _} ->
@@ -1474,14 +1509,19 @@ defmodule Ecto.Query.Planner do
         end
     end
   end
+
   defp type!(kind, query, expr, schema, field) when is_atom(schema) do
     cond do
       type = schema.__schema__(:type, field) ->
         type
+
       Map.has_key?(schema.__struct__, field) ->
-        error! query, expr, "field `#{field}` in `#{kind}` is a virtual field in schema #{inspect schema}"
+        message = "field `#{field}` in `#{kind}` is a virtual field in schema #{inspect schema}"
+        error!(query, expr, message)
+
       true ->
-        error! query, expr, "field `#{field}` in `#{kind}` does not exist in schema #{inspect schema}"
+        message = "field `#{field}` in `#{kind}` does not exist in schema #{inspect schema}"
+        error!(query, expr, message)
     end
   end
 
