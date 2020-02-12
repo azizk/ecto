@@ -942,7 +942,7 @@ defmodule Ecto.Query.Planner do
     {Enum.reverse(combinations), counter}
   end
 
-  defp validate_embed_extract_path!(embed_field, path, kind, query) do
+  defp embed_extract_path_type!(embed_field, path, kind, query) do
     {{:., _, [{:&, _, [ix]}, field]}, _, []} = embed_field
     {_, schema, _} = get_source!(kind, query, ix)
     type = schema.__schema__(:type, field)
@@ -969,6 +969,7 @@ defmodule Ecto.Query.Planner do
 
       {path_field, path_type}
     end)
+    |> elem(1)
   end
 
   defp prewalk_source({:fragment, meta, fragments}, kind, query, expr, acc, adapter) do
@@ -1033,9 +1034,10 @@ defmodule Ecto.Query.Planner do
     {%Ecto.Query.Tagged{value: arg, tag: type, type: Ecto.Type.type(type)}, acc}
   end
 
-  defp prewalk({:embed_extract_path, _meta, [embed_field, path]} = expr, kind, query, _expr, acc, _adapter) do
-    validate_embed_extract_path!(embed_field, path, kind, query)
-    {expr, acc}
+  defp prewalk({:embed_extract_path, meta, [embed_field, path]}, kind, query, _expr, acc, _adapter) do
+    type = embed_extract_path_type!(embed_field, path, kind, query)
+    IO.inspect type
+    {{:embed_extract_path, meta, [embed_field, path]}, acc}
   end
 
   defp prewalk(%Ecto.Query.Tagged{value: v, type: type} = tagged, kind, query, expr, acc, adapter) do

@@ -314,7 +314,7 @@ defmodule Ecto.Integration.TypeTest do
     |> TestRepo.insert!()
 
     assert TestRepo.one(from(o in Order, select: embed_extract_path(o.item, [:price]))) == item.price
-    # assert TestRepo.one(from(o in Order, select: embed_extract_path(o.item, [:valid_at]))) == item.valid_at
+    assert TestRepo.one(from(o in Order, select: embed_extract_path(o.item, [:valid_at]))) == item.valid_at
   end
 
   @tag :map_type
