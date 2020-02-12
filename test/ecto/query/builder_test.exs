@@ -74,6 +74,7 @@ defmodule Ecto.Query.BuilderTest do
     end
   end
 
+  # TODO:
   @tag :skip
   test "escape embed_extract_path + json_extract_path" do
     escape(quote do x.y["a"].b end, [x: 0], __ENV__)
