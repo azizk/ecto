@@ -809,7 +809,7 @@ defmodule Ecto.Query.PlannerTest do
     query = from(Post, []) |> where([p], p.meta.slug == "foo")
     normalize(query)
 
-    assert_raise RuntimeError, "unknown field `bad`", fn ->
+    assert_raise RuntimeError, "field `bad` does not exist in Ecto.Query.PlannerTest.Post", fn ->
       query = from(Post, []) |> where([p], p.bad.bad == "foo")
       normalize(query)
     end
@@ -819,13 +819,26 @@ defmodule Ecto.Query.PlannerTest do
       normalize(query)
     end
 
-    assert_raise RuntimeError, "field `bad` does not exist in embed Ecto.Query.PlannerTest.PostMeta", fn ->
+    assert_raise RuntimeError, "field `bad` does not exist in Ecto.Query.PlannerTest.PostMeta", fn ->
       query = from(Post, []) |> where([p], p.meta.bad == "foo")
       normalize(query)
     end
 
-    assert_raise RuntimeError, "accessing nested embeds is not yet supported", fn ->
-      query = from(Post, []) |> where([p], p.meta.author.name == "john")
+    query = from(Post, []) |> where([p], p.meta.author.name == "john")
+    normalize(query)
+
+    assert_raise RuntimeError, "field `bad` does not exist in Ecto.Query.PlannerTest.PostMeta", fn ->
+      query = from(Post, []) |> where([p], p.meta.bad.bad2 == "john")
+      normalize(query)
+    end
+
+    assert_raise RuntimeError, "expected field `slug` to be of type embed, got: `:string`", fn ->
+      query = from(Post, []) |> where([p], p.meta.slug.name == "john")
+      normalize(query)
+    end
+
+    assert_raise RuntimeError, "field `bad` does not exist in Ecto.Query.PlannerTest.Author", fn ->
+      query = from(Post, []) |> where([p], p.meta.author.bad == "john")
       normalize(query)
     end
   end

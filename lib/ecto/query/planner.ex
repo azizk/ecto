@@ -942,6 +942,35 @@ defmodule Ecto.Query.Planner do
     {Enum.reverse(combinations), counter}
   end
 
+  defp validate_embed_extract_path!(embed_field, path, kind, query) do
+    {{:., _, [{:&, _, [ix]}, field]}, _, []} = embed_field
+    {_, schema, _} = get_source!(kind, query, ix)
+    type = schema.__schema__(:type, field)
+
+    unless type do
+      raise "field `#{field}` does not exist in #{inspect(schema)}"
+    end
+
+    Enum.reduce(path, {field, type}, fn path_field, {field, type} ->
+      embed =
+        case type do
+          {:embed, %{related: embed}} ->
+            embed
+
+          other ->
+            raise "expected field `#{field}` to be of type embed, got: `#{inspect(other)}`"
+        end
+
+      path_type = embed.__schema__(:type, path_field)
+
+      unless path_type do
+        raise "field `#{path_field}` does not exist in #{inspect(embed)}"
+      end
+
+      {path_field, path_type}
+    end)
+  end
+
   defp prewalk_source({:fragment, meta, fragments}, kind, query, expr, acc, adapter) do
     {fragments, acc} = prewalk(fragments, kind, query, expr, acc, adapter)
     {{:fragment, meta, fragments}, acc}
@@ -1005,36 +1034,7 @@ defmodule Ecto.Query.Planner do
   end
 
   defp prewalk({:embed_extract_path, _meta, [embed_field, path]} = expr, kind, query, _expr, acc, _adapter) do
-    {{:., _, [{:&, _, [ix]}, field]}, _, []} = embed_field
-    {_, schema, _} = get_source!(kind, query, ix)
-
-    embed =
-      case schema.__schema__(:type, field) do
-        {:embed, %{related: embed}} ->
-          embed
-
-        nil ->
-          # TODO improve error
-          raise "unknown field `#{field}`"
-
-        other ->
-          # TODO improve error
-          raise "expected field `#{field}` to be of type embed, got: `#{inspect(other)}`"
-      end
-
-    case path do
-      [element] ->
-        type = embed.__schema__(:type, element)
-
-        unless type do
-          # TODO: improve error
-          raise "field `#{element}` does not exist in embed #{inspect(embed)}"
-        end
-
-      _ ->
-        raise "accessing nested embeds is not yet supported"
-    end
-
+    validate_embed_extract_path!(embed_field, path, kind, query)
     {expr, acc}
   end
 

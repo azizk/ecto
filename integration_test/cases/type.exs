@@ -314,10 +314,6 @@ defmodule Ecto.Integration.TypeTest do
 
     assert TestRepo.one(from(o in Order, select: embed_extract_path(o.item, [:price]))) == item.price
     # assert TestRepo.one(from(o in Order, select: embed_extract_path(o.item, [:valid_at]))) == item.valid_at
-
-    assert_raise RuntimeError, "field :bad does not exist in embed Ecto.Integration.Item", fn ->
-      TestRepo.one(from(o in Order, select: embed_extract_path(o.item, [:bad])))
-    end
   end
 
   @tag :map_type
