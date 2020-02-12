@@ -74,6 +74,13 @@ defmodule Ecto.Query.BuilderTest do
     end
   end
 
+  @tag :skip
+  test "escape embed_extract_path + json_extract_path" do
+    escape(quote do x.y["a"].b end, [x: 0], __ENV__)
+
+    escape(quote do x.y.a["b"] end, [x: 0], __ENV__)
+  end
+
   test "escape fragments" do
     assert {Macro.escape(quote do fragment({:raw, "date_add("}, {:expr, &0.created_at()},
                                            {:raw, ", "}, {:expr, ^0}, {:raw, ")"}) end), [{0, :any}]} ==
